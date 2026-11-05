@@ -1,0 +1,40 @@
+{
+  "name": "redrive-prayagraj",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run db:migrate && next dev",
+    "build": "npm run db:migrate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.mts",
+    "db:seed": "tsx scripts/seed.mts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@vercel/blob": "^2.8.2",
+    "drizzle-orm": "^0.45.4",
+    "jose": "^6.2.15",
+    "lucide-react": "^1.68.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.4",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "drizzle-kit": "^0.31.11",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^4.3.4",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
