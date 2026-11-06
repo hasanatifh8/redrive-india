@@ -59,7 +59,7 @@ export default async function Home() {
       <section className="relative overflow-hidden bg-ink text-white">
         <div className="rd-dots absolute inset-0" aria-hidden="true" />
         <div className="absolute -top-24 -left-24 size-[420px] rounded-full bg-brand/25 blur-[120px]" aria-hidden="true" />
-        <div className="rd-container relative grid items-center gap-10 pt-10 pb-28 md:pt-14 lg:grid-cols-[1.05fr_1fr] lg:pb-32">
+        <div className="rd-container relative grid items-center gap-10 pt-10 pb-28 md:pt-14 lg:grid-cols-[1fr_1.1fr] lg:pb-32">
           <div>
             <span className="animate-rd-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[12px] font-semibold tracking-[0.2em] text-white uppercase backdrop-blur">
               <span className="size-1.5 rounded-full bg-brand" />
@@ -111,14 +111,14 @@ export default async function Home() {
               <img
                 src="/images/signage-gate.jpg"
                 alt="REDRIVE INDIA dealership entrance with signage on 120 Feet Road, Prayagraj"
-                className="aspect-[4/3.4] w-full object-cover lg:aspect-[4/4]"
+                className="aspect-[1600/719] w-full object-cover"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-16 text-right">
                 <p className="text-[12px] font-semibold tracking-[0.16em] text-[#FF6B7F] uppercase">Our showroom</p>
                 <p className="text-[14px] text-white">Sale · Purchase · Exchange of Pre-Owned Cars</p>
               </div>
             </div>
-            <div className="absolute -bottom-6 -left-4 hidden w-48 overflow-hidden rounded-xl border-4 border-ink shadow-xl sm:block md:-left-8">
+            <div className="absolute -bottom-16 -left-4 hidden w-40 overflow-hidden rounded-xl border-4 border-ink shadow-xl sm:block md:-left-8">
               <img src="/images/showroom-cars.jpg" alt="Cars on display at REDRIVE INDIA" className="aspect-[4/3] w-full object-cover" />
             </div>
           </div>

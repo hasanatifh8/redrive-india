@@ -21,7 +21,7 @@ export default function Gallery() {
 
   return (
     <>
-      <div className="grid auto-rows-[160px] grid-cols-2 gap-3 md:auto-rows-[200px] md:grid-cols-4">
+      <div className="grid grid-flow-dense auto-rows-[160px] grid-cols-2 gap-3 md:auto-rows-[220px] md:grid-cols-4">
         {GALLERY.map((g, i) => (
           <button
             key={g.src}
@@ -29,7 +29,7 @@ export default function Gallery() {
             onClick={() => setIndex(i)}
             className={`group relative overflow-hidden rounded-xl bg-muted ${g.className}`}
           >
-            <img src={g.src} alt={g.alt} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+            <img src={g.src} alt={g.alt} loading="lazy" className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${"imgClassName" in g ? g.imgClassName : ""}`} />
             <span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/75 to-transparent p-3 pt-10 text-left text-[12px] text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               {g.alt}
               <Expand className="size-4" />

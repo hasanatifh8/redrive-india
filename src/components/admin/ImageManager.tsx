@@ -37,12 +37,15 @@ export default function ImageManager({
   const [drag, setDrag] = useState<number | null>(null);
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const mainInput = useRef<HTMLInputElement>(null);
   const guard = useRef<HTMLInputElement>(null);
   const limit = single ? 1 : max;
 
-  const addFiles = async (files: FileList | File[]) => {
+  // asMain: the (single) new photo goes in front and becomes the main photo.
+  const addFiles = async (files: FileList | File[], asMain = false) => {
     setErrors([]);
     let list = Array.from(files).filter((f) => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
+    if (asMain) list = list.slice(0, 1);
     const room = single ? 1 : limit - slots.length;
     if (room <= 0) {
       setErrors([`Maximum ${limit} photos`]);
@@ -54,7 +57,7 @@ export default function ImageManager({
     }
     // Placeholders are added in selection order, so finished uploads keep that order.
     const items = list.map((file) => ({ file, slot: { key: crypto.randomUUID(), preview: URL.createObjectURL(file) } as Slot }));
-    setSlots((cur) => (single ? items.map((i) => i.slot) : [...cur, ...items.map((i) => i.slot)]));
+    setSlots((cur) => (single ? items.map((i) => i.slot) : asMain ? [...items.map((i) => i.slot), ...cur] : [...cur, ...items.map((i) => i.slot)]));
 
     // Upload three at a time.
     const queue = [...items];
@@ -123,9 +126,21 @@ export default function ImageManager({
           >
             <img src={slot.url} alt="" className="h-full w-full object-cover" />
             {i === 0 && !single && (
-              <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-white">
-                <Star className="size-3 fill-current" /> Cover
+              <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-white shadow">
+                <Star className="size-3 fill-current" /> Main photo
               </span>
+            )}
+            {!single && i !== 0 && (
+              <button
+                type="button"
+                onClick={() => move(i, 0)}
+                title="Set as main photo"
+                aria-label="Set as main photo"
+                className="absolute top-2 right-2 flex h-7 items-center gap-1 rounded-full bg-white/95 px-2 text-[11px] font-semibold text-ink shadow transition hover:bg-brand hover:text-white"
+              >
+                <Star className="size-3.5" />
+                <span className="hidden sm:inline">Set as main</span>
+              </button>
             )}
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
               {!single ? (
@@ -136,11 +151,6 @@ export default function ImageManager({
                   <button type="button" onClick={() => move(i, i + 1)} disabled={i === slots.length - 1} className="rounded bg-white/90 p-1 text-ink disabled:opacity-40" aria-label="Move right">
                     <ArrowRight className="size-3.5" />
                   </button>
-                  {i !== 0 && (
-                    <button type="button" onClick={() => move(i, 0)} className="rounded bg-white/90 px-1.5 text-[11px] font-semibold text-ink">
-                      Make cover
-                    </button>
-                  )}
                 </div>
               ) : (
                 <span />
@@ -175,6 +185,26 @@ export default function ImageManager({
           </button>
         )}
       </div>
+      {!single && !full && (
+        <button
+          type="button"
+          onClick={() => mainInput.current?.click()}
+          className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand/40 bg-brand-soft px-3 text-[13px] font-semibold text-brand transition hover:border-brand"
+        >
+          <Star className="size-4" />
+          Upload main photo
+        </button>
+      )}
+      <input
+        ref={mainInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length) addFiles(e.target.files, true);
+          e.target.value = '';
+        }}
+      />
       <input
         ref={input}
         type="file"
@@ -188,7 +218,7 @@ export default function ImageManager({
       />
       {!single && (
         <p className="mt-2 text-[12px] text-muted-foreground">
-          {urls.length}/{limit} photos{pendingCount > 0 && ` · ${pendingCount} uploading`} · Drag to reorder · The first photo is the cover shown in listings. Photos are compressed automatically.
+          {urls.length}/{limit} photos{pendingCount > 0 && ` · ${pendingCount} uploading`} · The ★ main photo is shown first in listings — tap “Set as main” on any photo to change it, or drag to reorder.
         </p>
       )}
       {errors.length > 0 && (

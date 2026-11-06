@@ -52,10 +52,11 @@ export const BUDGET_OPTIONS = [
 export const MAX_CAR_IMAGES = 12;
 
 export const GALLERY = [
-  { src: '/images/signage-gate.jpg', alt: 'REDRIVE INDIA entrance & signage, 120 Feet Road', className: 'row-span-2' },
-  { src: '/images/showroom-cars.jpg', alt: 'Cars on display under the showroom shed', className: 'col-span-2 md:col-span-2' },
+  // Order + spans tile a 4-column grid (2 on mobile) with no gaps; the wide gate sign gets a wide tile.
+  { src: '/images/signage-gate.jpg', alt: 'REDRIVE INDIA entrance & signage, 120 Feet Road', className: 'col-span-2', imgClassName: 'object-top' },
   { src: '/images/yard-entrance.jpg', alt: 'Vehicle display yard', className: '' },
-  { src: '/images/owner-yard.jpg', alt: 'At the REDRIVE INDIA yard, Kalindipuram', className: 'row-span-2 md:row-span-2' },
+  { src: '/images/owner-yard.jpg', alt: 'At the REDRIVE INDIA yard, Kalindipuram', className: 'row-span-2' },
+  { src: '/images/showroom-cars.jpg', alt: 'Cars on display under the showroom shed', className: 'col-span-2' },
   { src: '/images/brand-poster.jpg', alt: 'Your Dream Car, Our Commitment', className: '' },
 ];
 
