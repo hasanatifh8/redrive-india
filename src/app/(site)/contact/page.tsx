@@ -4,7 +4,7 @@ import { getPublicCars, getSettings } from '@/lib/data';
 import { DEFAULT_WA_TEXT, telHref, waHref } from '@/lib/settings-defaults';
 import LeadForm from '@/components/LeadForm';
 import LocationCard from '@/components/LocationCard';
-import { InstagramIcon, WhatsAppIcon } from '@/components/BrandIcons';
+import { FacebookIcon, InstagramIcon, WhatsAppIcon } from '@/components/BrandIcons';
 import { PageHero } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Contact', description: 'Call, WhatsApp or visit REDRIVE INDIA on 120 Feet Road, Kalindipuram, Prayagraj.' };
@@ -22,6 +22,7 @@ export default async function ContactPage({ searchParams }: { searchParams: { ty
     { Icon: WhatsAppIcon, label: 'WhatsApp', value: s.phonePrimary, href: waHref(s, DEFAULT_WA_TEXT) },
     s.email && { Icon: Mail, label: 'Email', value: s.email, href: `mailto:${s.email}` },
     s.instagramHandle && { Icon: InstagramIcon, label: 'Instagram', value: s.instagramHandle, href: s.instagramUrl },
+    s.facebookUrl && { Icon: FacebookIcon, label: 'Facebook', value: `${s.businessName} on Facebook`, href: s.facebookUrl },
     { Icon: Clock, label: 'Hours', value: `Mon–Sat: ${s.hoursWeekdays} · Sun: ${s.hoursSunday}` },
   ].filter(Boolean) as { Icon: React.ComponentType<{ className?: string }>; label: string; value: string; href?: string }[];
 

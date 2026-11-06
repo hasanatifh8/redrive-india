@@ -10,6 +10,7 @@ export const SETTING_DEFAULTS = {
   email: '',
   instagramHandle: '@redriveindiaprayagraj',
   instagramUrl: 'https://www.instagram.com/redriveindiaprayagraj',
+  facebookUrl: 'https://www.facebook.com/share/1EcgJd4gA2/',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=REDRIVE+INDIA+120+Feet+Road+Kalindipuram+Prayagraj',
   mapEmbedUrl: '',
   hoursWeekdays: 'To be updated by dealership',

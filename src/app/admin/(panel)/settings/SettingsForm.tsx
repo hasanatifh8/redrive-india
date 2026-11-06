@@ -19,6 +19,7 @@ const GROUPS: { title: string; description?: string; fields: Def[] }[] = [
       { key: 'whatsappNumber', label: 'WhatsApp number', hint: '10-digit mobile or with 91 prefix' },
       { key: 'instagramHandle', label: 'Instagram handle' },
       { key: 'instagramUrl', label: 'Instagram URL', wide: true },
+      { key: 'facebookUrl', label: 'Facebook page URL', hint: 'Leave blank to hide the Facebook link', wide: true },
     ],
   },
   {

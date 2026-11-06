@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CarFront, Clock, MapPin, Phone } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
 import { DEFAULT_WA_TEXT, telHref, waHref, type SiteSettings } from '@/lib/settings-defaults';
-import { InstagramIcon, WhatsAppIcon } from './BrandIcons';
+import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './BrandIcons';
 
 const SERVICES = [
   { label: 'Buy Pre-Owned Cars', href: '/buy-cars' },
@@ -31,6 +31,11 @@ export default function Footer({ settings: s }: { settings: SiteSettings }) {
               <a href={s.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram" className={`${socialCls} hover:bg-brand`}>
                 <InstagramIcon />
               </a>
+              {s.facebookUrl && (
+                <a href={s.facebookUrl} target="_blank" rel="noreferrer" aria-label="Facebook" className={`${socialCls} hover:bg-[#1877F2]`}>
+                  <FacebookIcon />
+                </a>
+              )}
               <a href={waHref(s)} target="_blank" rel="noreferrer" aria-label="WhatsApp" className={`${socialCls} hover:bg-[#25D366]`}>
                 <WhatsAppIcon />
               </a>

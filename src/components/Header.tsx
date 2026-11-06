@@ -7,7 +7,7 @@ import { Heart, MapPin, Menu, Phone, Search, X } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
 import { DEFAULT_WA_TEXT, telHref, waHref } from '@/lib/settings-defaults';
 import { useSettings } from './SettingsProvider';
-import { InstagramIcon, WhatsAppIcon } from './BrandIcons';
+import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './BrandIcons';
 import { useShortlist } from './ShortlistProvider';
 
 const iconBtn =
@@ -50,6 +50,17 @@ export default function Header() {
               <InstagramIcon className="size-3.5" />
               {s.instagramHandle}
             </a>
+            {s.facebookUrl && (
+              <a
+                href={s.facebookUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 transition-colors duration-150 hover:text-white"
+              >
+                <FacebookIcon className="size-3.5" />
+                Facebook
+              </a>
+            )}
           </div>
         </div>
       </div>
