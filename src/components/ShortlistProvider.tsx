@@ -11,6 +11,7 @@ type ShortlistState = {
   toggleWishlist: (id: number) => void;
   toggleCompare: (car: CarView) => void;
   clearCompare: () => void;
+  setCompare: (cars: CarView[]) => void;
   maxCompare: number;
 };
 
@@ -45,7 +46,7 @@ export function ShortlistProvider({ children }: { children: ReactNode }) {
 
   return (
     <ShortlistContext.Provider
-      value={{ wishlist, compare, toggleWishlist, toggleCompare, clearCompare: () => setCompare([]), maxCompare: MAX_COMPARE }}
+      value={{ wishlist, compare, toggleWishlist, toggleCompare, clearCompare: () => setCompare([]), setCompare: (cars) => setCompare(cars.slice(0, MAX_COMPARE)), maxCompare: MAX_COMPARE }}
     >
       {children}
     </ShortlistContext.Provider>
