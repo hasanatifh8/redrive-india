@@ -19,6 +19,7 @@ export const LEAD_TYPES = [
   { value: 'buy', label: 'Buy enquiry' },
   { value: 'sell', label: 'Sell car' },
   { value: 'exchange', label: 'Exchange' },
+  { value: 'offer', label: 'Offer claim' },
   { value: 'general', label: 'General' },
 ] as const;
 

@@ -75,9 +75,12 @@ for (const { photos, ...c } of DEMO) {
 }
 
 await db.insert(offers).values([
-  { title: 'Bring your car for exchange evaluation', description: 'Planning to upgrade? Bring your current car to the showroom and discuss its exchange value against any car you like.', ctaLabel: 'Start exchange', ctaHref: '/exchange', sortOrder: 0 },
-  { title: 'Spotlight: Hyundai Creta SX (O)', description: 'Top-spec diesel automatic Creta featured this month — now with a festive discount.', carId: ids['Creta'], sortOrder: 1 },
-  { title: 'New arrival: Mahindra Scorpio-N Z8 L', description: 'Nearly new Scorpio-N automatic — just arrived at the yard.', carId: ids['Scorpio-N'], sortOrder: 2 },
+  { category: 'showroom', icon: 'inspection', highlight: 'FREE', title: 'Free car health check-up', description: '25-point check of engine, brakes, battery, AC and tyres — for any car, any brand. Takes about 30 minutes.', terms: 'Prior booking required. Valid Monday–Saturday. Parts and repairs, if any, are charged separately.', sortOrder: 0 },
+  { category: 'showroom', icon: 'test-drive', highlight: 'FREE', title: 'Test drive at your doorstep', description: 'Shortlisted a car? We’ll bring it to your home or office in Prayagraj for a no-obligation test drive.', terms: 'Within Prayagraj city limits. Valid driving licence required.', sortOrder: 1 },
+  { category: 'showroom', icon: 'paperwork', highlight: 'FREE', title: 'RC transfer assistance', description: 'Buy any car from us and we handle the RC transfer paperwork for you at no extra service charge.', terms: 'Government/RTO fees are payable as applicable.', claimable: false, ctaLabel: 'Browse cars', ctaHref: '/buy-cars', sortOrder: 2 },
+  { category: 'showroom', icon: 'exchange', highlight: 'FREE VALUATION', title: 'Bring your car for exchange evaluation', description: 'Planning to upgrade? Bring your current car to the showroom and discuss its exchange value against any car you like.', ctaLabel: 'Start exchange', ctaHref: '/exchange', sortOrder: 3 },
+  { category: 'car', highlight: 'Festive deal', title: 'Spotlight: Hyundai Creta SX (O)', description: 'Top-spec diesel automatic Creta featured this month — now with a festive discount.', carId: ids['Creta'], sortOrder: 1 },
+  { category: 'car', highlight: 'New arrival', title: 'New arrival: Mahindra Scorpio-N Z8 L', description: 'Nearly new Scorpio-N automatic — just arrived at the yard.', carId: ids['Scorpio-N'], sortOrder: 2 },
 ]);
 
 await db.insert(referralCodes).values({
@@ -89,5 +92,5 @@ await db.insert(referralCodes).values({
   rewardAmount: 2000,
 });
 
-console.log(`✓ Seeded ${DEMO.length} cars, 3 offers and referral code WELCOME5K`);
+console.log(`✓ Seeded ${DEMO.length} cars, 6 offers and referral code WELCOME5K`);
 client.close();

@@ -18,6 +18,7 @@ import { formatPrice } from '@/lib/pricing';
 import { telHref } from '@/lib/settings-defaults';
 import CarCard from '@/components/CarCard';
 import VehicleSearch from '@/components/VehicleSearch';
+import ShowroomOfferCard from '@/components/ShowroomOfferCard';
 import { toSearchItem } from '@/lib/search';
 import Gallery from '@/components/Gallery';
 import Reveal from '@/components/Reveal';
@@ -250,11 +251,14 @@ export default async function Home() {
           <SectionHeading
             eyebrow="Special offers"
             title="Current highlights"
-            description="Current deals and spotlight cars at our Kalindipuram yard."
+            description="Free services, showroom events and the best deals on cars in stock."
             action={{ href: '/offers', label: 'All offers' }}
           />
           <div className="grid gap-5 md:grid-cols-3">
-            {offers.slice(0, 3).map((o) => (
+            {offers.slice(0, 3).map((o) =>
+              o.category === 'showroom' ? (
+                <ShowroomOfferCard key={o.id} offer={o} compact />
+              ) : (
               <OfferCard
                 key={o.id}
                 media={
@@ -273,8 +277,10 @@ export default async function Home() {
                 href={o.car ? `/cars/${o.car.slug}` : o.ctaHref || undefined}
                 cta={o.ctaLabel || undefined}
                 validUntil={o.validUntil}
+                tag={o.highlight || 'Car deal'}
               />
-            ))}
+              ),
+            )}
           </div>
         </div>
       </section>

@@ -3,14 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useFormState } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Home, Pencil, Plus, Tag, Trash2, X } from 'lucide-react';
+import { CarFront, Gift, Home, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { deleteOffer, saveOffer, toggleOffer, type ActionResult } from '@/app/admin/actions';
 import ImageManager from '@/components/admin/ImageManager';
+import OfferIcon, { OFFER_ICONS } from '@/components/OfferIcon';
 import { ActionButton, SubmitButton, Toast } from '@/components/admin/client';
 import { Badge, Field, btn } from '@/components/admin/ui';
 
 export type OfferRow = {
   id: number;
+  category: string;
+  icon: string;
+  highlight: string;
+  terms: string;
+  claimable: boolean;
   title: string;
   description: string;
   image: string | null;
@@ -28,6 +34,8 @@ export type OfferRow = {
 function OfferForm({ edit, cars, onDone }: { edit: OfferRow | null; cars: { id: number; label: string }[]; onDone: (saved: boolean) => void }) {
   const router = useRouter();
   const [state, action] = useFormState<ActionResult, FormData>(saveOffer, null);
+  const [category, setCategory] = useState(edit?.category ?? 'showroom');
+  const [icon, setIcon] = useState(edit?.icon ?? 'gift');
   useEffect(() => {
     if (state?.ok) {
       router.refresh();
@@ -35,6 +43,7 @@ function OfferForm({ edit, cars, onDone }: { edit: OfferRow | null; cars: { id: 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+  const showroom = category === 'showroom';
 
   return (
     <form action={action} className="rd-card flex flex-col gap-4 p-5">
@@ -45,31 +54,102 @@ function OfferForm({ edit, cars, onDone }: { edit: OfferRow | null; cars: { id: 
         </button>
       </div>
       {edit && <input type="hidden" name="id" value={edit.id} />}
+      <input type="hidden" name="category" value={category} />
+      <input type="hidden" name="icon" value={icon} />
+
+      <Field label="Offer type">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {[
+            { v: 'showroom', l: 'Showroom offer / event', Icon: Gift },
+            { v: 'car', l: 'Car deal', Icon: CarFront },
+          ].map(({ v, l, Icon }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setCategory(v)}
+              className={`flex h-9 items-center justify-center gap-1.5 rounded-md text-[13px] font-semibold transition ${category === v ? 'bg-white text-ink shadow-sm' : 'text-muted-foreground'}`}
+            >
+              <Icon className="size-4" />
+              {l}
+            </button>
+          ))}
+        </div>
+      </Field>
+
       <Field label="Title *" htmlFor="of-title">
-        <input id="of-title" name="title" required defaultValue={edit?.title} className="rd-input" placeholder="Diwali exchange bonus" />
+        <input id="of-title" name="title" required defaultValue={edit?.title} className="rd-input" placeholder={showroom ? 'Free car health check-up' : 'Diwali deal on Hyundai Creta'} />
       </Field>
       <Field label="Description" htmlFor="of-desc">
-        <textarea id="of-desc" name="description" rows={3} defaultValue={edit?.description} className="rd-input h-auto py-2" />
+        <textarea
+          id="of-desc"
+          name="description"
+          rows={3}
+          defaultValue={edit?.description}
+          className="rd-input h-auto py-2"
+          placeholder={showroom ? '25-point check of engine, brakes, AC and battery — on us. Bring any car.' : ''}
+        />
       </Field>
-      <Field label="Linked car" htmlFor="of-car" hint="Shows the car’s photo and live price, and links to it">
-        <select id="of-car" name="carId" defaultValue={edit?.carId ?? ''} className="rd-select">
-          <option value="">— None —</option>
-          {cars.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Field label="Banner image" hint="Optional — overrides the car photo">
+
+      {showroom ? (
+        <>
+          <Field label="Icon">
+            <div className="grid grid-cols-6 gap-1.5">
+              {Object.entries(OFFER_ICONS).map(([key, { label, Icon }]) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={icon === key}
+                  onClick={() => setIcon(key)}
+                  className={`flex aspect-square items-center justify-center rounded-lg border transition ${icon === key ? 'border-brand bg-brand text-white' : 'border-border bg-white text-ink hover:border-brand'}`}
+                >
+                  <Icon className="size-5" />
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Highlight badge" htmlFor="of-hl" hint="Short and bold, e.g. FREE, ₹2,000 OFF, 0% FEE">
+            <input id="of-hl" name="highlight" maxLength={24} defaultValue={edit?.highlight ?? 'FREE'} className="rd-input uppercase" />
+          </Field>
+          <Field label="Terms & conditions" htmlFor="of-terms" hint="Shown in a collapsible box on the offer">
+            <textarea id="of-terms" name="terms" rows={3} defaultValue={edit?.terms} className="rd-input h-auto py-2" placeholder="Valid on weekdays. One per customer. Prior booking required." />
+          </Field>
+          <label className="flex items-start gap-2 text-[14px] font-medium text-ink">
+            <input type="checkbox" name="claimable" defaultChecked={edit ? edit.claimable : true} className="mt-0.5 size-4 accent-[var(--brand)]" />
+            <span>
+              Show “Claim offer” button
+              <span className="block text-[12px] font-normal text-muted-foreground">Customers leave their name &amp; number — it arrives in Leads as an “Offer claim”.</span>
+            </span>
+          </label>
+        </>
+      ) : (
+        <>
+          <Field label="Linked car" htmlFor="of-car" hint="Shows the car’s photo and live price, and links to it">
+            <select id="of-car" name="carId" defaultValue={edit?.carId ?? ''} className="rd-select">
+              <option value="">— None —</option>
+              {cars.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Badge text" htmlFor="of-hl" hint="Optional, e.g. Price drop">
+            <input id="of-hl" name="highlight" maxLength={24} defaultValue={edit?.highlight} className="rd-input" />
+          </Field>
+        </>
+      )}
+
+      <Field label={showroom ? 'Background photo (optional)' : 'Banner image'} hint={showroom ? 'Leave empty for the dark branded design' : 'Optional — overrides the car photo'}>
         <ImageManager name="image" initial={edit?.image ? [edit.image] : []} single folder="offers" />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Button text" htmlFor="of-cta">
-          <input id="of-cta" name="ctaLabel" defaultValue={edit?.ctaLabel} className="rd-input" placeholder="Start exchange" />
+        <Field label="Extra button text" htmlFor="of-cta">
+          <input id="of-cta" name="ctaLabel" defaultValue={edit?.ctaLabel} className="rd-input" placeholder={showroom ? 'Book test drive' : 'Start exchange'} />
         </Field>
-        <Field label="Button link" htmlFor="of-href">
-          <input id="of-href" name="ctaHref" defaultValue={edit?.ctaHref} className="rd-input" placeholder="/exchange" />
+        <Field label="Extra button link" htmlFor="of-href">
+          <input id="of-href" name="ctaHref" defaultValue={edit?.ctaHref} className="rd-input" placeholder="/contact" />
         </Field>
         <Field label="Valid until" htmlFor="of-valid" hint="Hidden automatically after">
           <input id="of-valid" name="validUntil" type="date" defaultValue={edit?.validUntil} className="rd-input" />
@@ -98,29 +178,61 @@ export default function OfferManager({ rows, cars }: { rows: OfferRow[]; cars: {
   const [editing, setEditing] = useState<OfferRow | null | 'new'>(null);
   const [toast, setToast] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
+  const [filter, setFilter] = useState<'all' | 'showroom' | 'car'>('all');
+  const shown = rows.filter((o) => filter === 'all' || o.category === filter);
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
       {toast && <Toast message={toast} />}
       <div className="rd-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-[16px] font-semibold text-ink">All offers</h2>
+          <div className="flex flex-wrap gap-1">
+            {(
+              [
+                ['all', 'All', rows.length],
+                ['showroom', 'Showroom', rows.filter((o) => o.category === 'showroom').length],
+                ['car', 'Car deals', rows.filter((o) => o.category !== 'showroom').length],
+              ] as const
+            ).map(([id, label, n]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setFilter(id)}
+                className={`h-8 rounded-full px-3 text-[13px] font-medium transition ${filter === id ? 'bg-ink text-white' : 'text-muted-foreground hover:bg-muted hover:text-ink'}`}
+              >
+                {label} <span className="opacity-60">{n}</span>
+              </button>
+            ))}
+          </div>
           <button type="button" onClick={() => setEditing('new')} className={btn.primary}>
             <Plus className="size-4" /> New offer
           </button>
         </div>
         <ul className="divide-y divide-border">
-          {rows.map((o) => {
+          {shown.map((o) => {
             const car = cars.find((c) => c.id === o.carId);
             const expired = o.validUntil && o.validUntil < today;
             return (
               <li key={o.id} className="flex items-center gap-4 p-4">
                 <span className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-ink">
-                  {o.image ? <img src={o.image} alt="" className="h-full w-full object-cover" /> : <Tag className="size-5 text-white/50" />}
+                  {o.image ? (
+                    <img src={o.image} alt="" className="h-full w-full object-cover" />
+                  ) : o.category === 'showroom' ? (
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-brand text-white">
+                      <OfferIcon name={o.icon} className="size-5" />
+                    </span>
+                  ) : (
+                    <CarFront className="size-5 text-white/50" />
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
                     {o.title}
+                    {o.category === 'showroom' ? (
+                      <Badge className="border-brand/20 bg-brand-soft text-brand">Showroom{o.highlight && ` · ${o.highlight}`}</Badge>
+                    ) : (
+                      <Badge className="border-sky-200 bg-sky-50 text-sky-700">Car deal</Badge>
+                    )}
                     {!o.active ? (
                       <Badge className="border-zinc-200 bg-zinc-100 text-zinc-600">Paused</Badge>
                     ) : expired ? (
@@ -148,7 +260,7 @@ export default function OfferManager({ rows, cars }: { rows: OfferRow[]; cars: {
             );
           })}
         </ul>
-        {!rows.length && <p className="p-10 text-center text-[14px] text-muted-foreground">No offers yet.</p>}
+        {!shown.length && <p className="p-10 text-center text-[14px] text-muted-foreground">No offers yet.</p>}
       </div>
       <div className="xl:sticky xl:top-6 xl:self-start">
         {editing ? (

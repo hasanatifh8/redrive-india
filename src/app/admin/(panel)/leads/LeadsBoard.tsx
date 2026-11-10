@@ -129,6 +129,7 @@ export default function LeadsBoard({ leads, initial }: { leads: LeadRow[]; initi
                     </span>
                     <span className="block truncate text-[13px] text-muted-foreground">
                       {typeLabel(l.type)}
+                      {l.details.offer && ` · 🎁 ${l.details.offer}`}
                       {l.carLabel && ` · ${l.carLabel}`}
                       {l.referralCode && ` · 🎟 ${l.referralCode}`}
                       {l.images.length > 0 && ` · 📷 ${l.images.length}`}

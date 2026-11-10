@@ -109,8 +109,13 @@ export const leads = sqliteTable(
 
 export const offers = sqliteTable('offers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  category: text('category').notNull().default('car'), // car (deal on a car) | showroom (service, event, freebie)
   title: text('title').notNull(),
   description: text('description').notNull().default(''),
+  icon: text('icon').notNull().default('gift'), // showroom offers: preset icon name
+  highlight: text('highlight').notNull().default(''), // big badge text, e.g. "FREE", "₹5,000 OFF"
+  terms: text('terms').notNull().default(''),
+  claimable: integer('claimable', { mode: 'boolean' }).notNull().default(true), // show "Claim offer" form
   image: text('image'),
   carId: integer('car_id').references(() => cars.id, { onDelete: 'set null' }),
   ctaLabel: text('cta_label').notNull().default(''),

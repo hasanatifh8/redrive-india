@@ -20,7 +20,7 @@ export type Field = {
   defaultValue?: string;
 };
 
-type LeadType = 'test_drive' | 'buy' | 'sell' | 'exchange' | 'general';
+type LeadType = 'test_drive' | 'buy' | 'sell' | 'exchange' | 'offer' | 'general';
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -43,6 +43,8 @@ type Props = {
   carId?: number;
   submitLabel?: string;
   showReferral?: boolean;
+  /** Extra values sent with the lead, e.g. which offer was claimed. */
+  hidden?: Record<string, string>;
 };
 
 export default function LeadForm(props: Props) {
@@ -51,7 +53,7 @@ export default function LeadForm(props: Props) {
   return <LeadFormInner key={round} {...props} onReset={() => setRound((r) => r + 1)} />;
 }
 
-function LeadFormInner({ title, type, fields, carId, submitLabel = 'Send enquiry', showReferral = false, onReset }: Props & { onReset: () => void }) {
+function LeadFormInner({ title, type, fields, carId, submitLabel = 'Send enquiry', showReferral = false, hidden, onReset }: Props & { onReset: () => void }) {
   const s = useSettings();
   const [state, action] = useFormState<LeadState, FormData>(submitLead, null);
   const [code, setCode] = useState('');
@@ -104,6 +106,7 @@ function LeadFormInner({ title, type, fields, carId, submitLabel = 'Send enquiry
       <h3 className="text-[20px] font-semibold text-ink sm:col-span-2">{title}</h3>
       <input type="hidden" name="type" value={type} />
       {carId && <input type="hidden" name="carId" value={carId} />}
+      {hidden && Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
       <input type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       {fields.map((f) => {
         const id = `lead-${type}-${f.name}`;

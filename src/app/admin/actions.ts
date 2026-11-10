@@ -297,8 +297,13 @@ export async function deleteReferral(id: number) {
 /* ------------------------------------------------------------------ offers */
 
 const OfferSchema = z.object({
+  category: z.enum(['car', 'showroom']).default('car'),
   title: z.string().trim().min(2, 'Title is required'),
   description: z.string().trim().default(''),
+  icon: z.string().trim().max(30).default('gift'),
+  highlight: z.string().trim().max(24, 'Highlight must be short, e.g. "FREE"').default(''),
+  terms: z.string().trim().max(2000).default(''),
+  claimable: bool,
   image: z.string().trim().nullable().default(null).transform((v) => v || null),
   carId: intOrNull,
   ctaLabel: z.string().trim().default(''),
@@ -314,11 +319,13 @@ export async function saveOffer(_prev: ActionResult, form: FormData): Promise<Ac
   const id = Number(form.get('id')) || undefined;
   const parsed = OfferSchema.safeParse(Object.fromEntries(form.entries()));
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0].message };
+  // Showroom offers aren't tied to a car.
+  const data = { ...parsed.data, carId: parsed.data.category === 'showroom' ? null : parsed.data.carId };
   if (id) {
     const [old] = await db.select().from(offers).where(eq(offers.id, id));
-    if (old?.image && old.image !== parsed.data.image) await deleteImages([old.image]);
-    await db.update(offers).set({ ...parsed.data, updatedAt: new Date() }).where(eq(offers.id, id));
-  } else await db.insert(offers).values(parsed.data);
+    if (old?.image && old.image !== data.image) await deleteImages([old.image]);
+    await db.update(offers).set({ ...data, updatedAt: new Date() }).where(eq(offers.id, id));
+  } else await db.insert(offers).values(data);
   refreshSite();
   return { ok: true, message: 'Offer saved' };
 }

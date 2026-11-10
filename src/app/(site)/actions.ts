@@ -19,7 +19,7 @@ const { leads, referralCodes, cars } = schema;
 export type LeadState = { ok: boolean; message: string; summary?: string } | null;
 
 const LeadSchema = z.object({
-  type: z.enum(['test_drive', 'buy', 'sell', 'exchange', 'general']),
+  type: z.enum(['test_drive', 'buy', 'sell', 'exchange', 'offer', 'general']),
   name: z.string().trim().min(2, 'Please enter your name').max(80),
   phone: z
     .string()
