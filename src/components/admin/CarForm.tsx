@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useFormState } from 'react-dom';
-import { Plus, X } from 'lucide-react';
-import type { Car, InspectionItem } from '@/db/schema';
-import { BODY_TYPES, BRANDS, CAR_STATUSES, COMMON_FEATURES, FUELS, INSPECTION_AREAS, MAX_CAR_IMAGES, OWNERS, TRANSMISSIONS } from '@/lib/constants';
+import { Plus, Trash2, X } from 'lucide-react';
+import type { Car, CustomSpec, InspectionItem } from '@/db/schema';
+import { BODY_TYPES, BRANDS, CAR_STATUSES, COMMON_FEATURES, FUELS, INSPECTION_AREAS, MAX_CAR_IMAGES, MONTHS, OWNERS, SPEC_SUGGESTIONS, TRANSMISSIONS } from '@/lib/constants';
 import { finalPrice, formatPrice, formatRupees } from '@/lib/pricing';
 import { saveCar, type ActionResult } from '@/app/admin/actions';
 import ImageManager from './ImageManager';
@@ -22,6 +22,12 @@ export default function CarForm({ car, images = [] }: Props) {
   const [discountValue, setDiscountValue] = useState(car?.discountValue ? String(car.discountValue) : '');
   const [features, setFeatures] = useState<string[]>(car?.features ?? []);
   const [customFeature, setCustomFeature] = useState('');
+  const [specs, setSpecs] = useState<(CustomSpec & { key: string })[]>(() => (car?.specs ?? []).map((x) => ({ ...x, key: crypto.randomUUID() })));
+  const addSpec = (label = '') => setSpecs((list) => [...list, { key: crypto.randomUUID(), label, value: '' }]);
+  const setSpec = (key: string, patch: Partial<CustomSpec>) => setSpecs((list) => list.map((x) => (x.key === key ? { ...x, ...patch } : x)));
+  const removeSpec = (key: string) => setSpecs((list) => list.filter((x) => x.key !== key));
+  const usedLabels = new Set(specs.map((x) => x.label.trim().toLowerCase()));
+
   const [inspection, setInspection] = useState<InspectionItem[]>(
     INSPECTION_AREAS.map((area) => car?.inspection.find((i) => i.area === area) ?? { area, score: 0, note: '' }),
   );
@@ -42,6 +48,7 @@ export default function CarForm({ car, images = [] }: Props) {
     <form action={action} className="flex flex-col gap-6 pb-24">
       {car && <input type="hidden" name="id" value={car.id} />}
       <input type="hidden" name="features" value={JSON.stringify(features)} />
+      <input type="hidden" name="specs" value={JSON.stringify(specs.map(({ label, value }) => ({ label, value })))} />
       <input type="hidden" name="inspection" value={JSON.stringify(inspection.filter((i) => i.score > 0))} />
 
       <Card title="Photos" description={`Upload 6–8 clear photos: front, rear, both sides, interior, dashboard, engine bay, odometer. Up to ${MAX_CAR_IMAGES}.`}>
@@ -66,8 +73,18 @@ export default function CarForm({ car, images = [] }: Props) {
               <Field label="Variant" htmlFor="variant">
                 <input id="variant" name="variant" defaultValue={car?.variant} className="rd-input" placeholder="e.g. SX (O) 1.5 Diesel AT" />
               </Field>
-              <Field label="Model year *" htmlFor="year">
-                <input id="year" name="year" type="number" required min={1990} max={year + 1} defaultValue={car?.year ?? year - 3} className="rd-input" />
+              <Field label="Model year (month & year) *" htmlFor="year">
+                <div className="grid grid-cols-[1fr_1.2fr] gap-2">
+                  <select id="month" name="month" aria-label="Month" defaultValue={car?.month ?? ''} className="rd-select">
+                    <option value="">Month</option>
+                    {MONTHS.map((m, i) => (
+                      <option key={m} value={i + 1}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                  <input id="year" name="year" type="number" required min={1990} max={year + 1} defaultValue={car?.year ?? year - 3} className="rd-input" aria-label="Year" />
+                </div>
               </Field>
               <Field label="Kilometres driven *" htmlFor="km">
                 <input id="km" name="km" type="number" required min={0} step={1} defaultValue={car?.km} className="rd-input" placeholder="e.g. 38500" />
@@ -113,6 +130,58 @@ export default function CarForm({ car, images = [] }: Props) {
                 <input id="insuranceValidity" name="insuranceValidity" defaultValue={car?.insuranceValidity} className="rd-input" placeholder="e.g. Comprehensive, valid till Mar 2026" />
               </Field>
             </div>
+          </Card>
+
+          <Card
+            title="More details"
+            description="Add any extra fields you want buyers to see: engine, mileage, service history, anything. Each one appears in the car overview."
+            actions={
+              <button type="button" onClick={() => addSpec()} className={`${btn.outline} shrink-0 whitespace-nowrap`}>
+                <Plus className="size-4" />
+                Add field
+              </button>
+            }
+          >
+            {specs.length > 0 && (
+              <div className="mb-4 flex flex-col gap-2">
+                {specs.map((sp) => (
+                  <div key={sp.key} className="grid grid-cols-[1fr_1.4fr_auto] items-center gap-2">
+                    <input
+                      value={sp.label}
+                      onChange={(e) => setSpec(sp.key, { label: e.target.value })}
+                      placeholder="Field name, e.g. Engine"
+                      aria-label="Field name"
+                      className="rd-input font-medium"
+                    />
+                    <input
+                      value={sp.value}
+                      onChange={(e) => setSpec(sp.key, { value: e.target.value })}
+                      placeholder="Value, e.g. 1497 cc"
+                      aria-label="Value"
+                      className="rd-input"
+                      autoFocus={!sp.value && !!sp.label}
+                    />
+                    <button type="button" onClick={() => removeSpec(sp.key)} className={btn.danger} aria-label="Remove field">
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mb-2 text-[12px] font-medium text-muted-foreground">Quick add:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SPEC_SUGGESTIONS.filter((l) => !usedLabels.has(l.toLowerCase())).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => addSpec(l)}
+                  className="h-7 rounded-full border border-dashed border-input px-2.5 text-[12px] font-medium text-ink transition hover:border-brand hover:text-brand"
+                >
+                  + {l}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-[12px] text-muted-foreground">Rows with an empty name or value are skipped when you save.</p>
           </Card>
 
           <Card title="Features" description="Tick what this car has, or add your own.">

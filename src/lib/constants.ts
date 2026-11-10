@@ -51,6 +51,16 @@ export const BUDGET_OPTIONS = [
 
 export const MAX_CAR_IMAGES = 12;
 
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "Mar 2021", or just "2021" when no month is set. */
+export const modelYearLabel = (year: number, month?: number | null) => (month ? `${MONTHS[month - 1]} ${year}` : String(year));
+
+// One-tap suggestions for the admin's "More details" fields — any label can be typed instead.
+export const SPEC_SUGGESTIONS = [
+  'Engine', 'Mileage', 'Power', 'Torque', 'Drivetrain', 'Boot space', 'Ground clearance',
+  'Service history', 'Accident history', 'Tyre condition', 'Spare keys', 'Warranty', 'Loan / hypothecation', 'RTO',
+];
+
 export const GALLERY = [
   // Order + spans tile a 4-column grid (2 on mobile) with no gaps; the wide gate sign gets a wide tile.
   { src: '/images/signage-gate.jpg', alt: 'REDRIVE INDIA entrance & signage, 120 Feet Road', className: 'col-span-2', imgClassName: 'object-top' },

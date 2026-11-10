@@ -17,8 +17,10 @@ import {
   Users,
   Armchair,
   Eye,
+  ListChecks,
 } from 'lucide-react';
 import { getCarBySlug, getPublicCars, getSettings } from '@/lib/data';
+import { modelYearLabel } from '@/lib/constants';
 import { formatKm, formatPrice } from '@/lib/pricing';
 import { telHref, waHref } from '@/lib/settings-defaults';
 import CarCard from '@/components/CarCard';
@@ -56,7 +58,7 @@ export default async function CarPage({ params }: { params: { slug: string } }) 
 
   const name = `${car.year} ${car.brand} ${car.model} ${car.variant}`;
   const specs = [
-    { label: 'Model year', value: car.year, Icon: CalendarDays },
+    { label: 'Model year', value: modelYearLabel(car.year, car.month), Icon: CalendarDays },
     { label: 'Kilometres', value: formatKm(car.km), Icon: Gauge },
     { label: 'Fuel', value: car.fuel, Icon: Fuel },
     { label: 'Transmission', value: car.transmission, Icon: Cog },
@@ -66,6 +68,7 @@ export default async function CarPage({ params }: { params: { slug: string } }) 
     { label: 'Seats', value: car.seats, Icon: Armchair },
     { label: 'Registration', value: car.registration, Icon: MapPin },
     { label: 'Insurance', value: car.insuranceValidity, Icon: ShieldCheck },
+    ...car.specs.map((sp) => ({ label: sp.label, value: sp.value, Icon: ListChecks })),
   ].filter((x) => x.value);
   const avgScore = car.inspection.length ? car.inspection.reduce((a, b) => a + b.score, 0) / car.inspection.length : 0;
   const waText = `Hello ${s.businessName}, I am interested in the ${name} (${formatPrice(car.final)}). Is it available?`;
@@ -143,7 +146,7 @@ export default async function CarPage({ params }: { params: { slug: string } }) 
                     </span>
                     <div className="min-w-0">
                       <dt className="text-[12px] text-muted-foreground">{label}</dt>
-                      <dd className="truncate text-[14px] font-semibold text-ink">{value}</dd>
+                      <dd className="text-[14px] font-semibold break-words text-ink">{value}</dd>
                     </div>
                   </div>
                 ))}
@@ -208,7 +211,7 @@ export default async function CarPage({ params }: { params: { slug: string } }) 
               <h1 className="mt-1 text-[28px] leading-tight font-semibold text-ink">{car.model}</h1>
               <p className="text-[14px] text-muted-foreground">{car.variant}</p>
               <p className="mt-2 text-[13px] text-muted-foreground">
-                {car.year} · {formatKm(car.km)} · {car.fuel} · {car.transmission}
+                {modelYearLabel(car.year, car.month)} · {formatKm(car.km)} · {car.fuel} · {car.transmission}
               </p>
 
               <div className="mt-4 border-t border-dashed border-border pt-4">

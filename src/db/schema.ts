@@ -8,6 +8,7 @@ const timestamps = {
 };
 
 export type InspectionItem = { area: string; score: number; note?: string };
+export type CustomSpec = { label: string; value: string };
 
 export const cars = sqliteTable(
   'cars',
@@ -18,6 +19,7 @@ export const cars = sqliteTable(
     model: text('model').notNull(),
     variant: text('variant').notNull().default(''),
     year: integer('year').notNull(),
+    month: integer('month'), // manufacturing month 1–12, optional
     km: integer('km').notNull().default(0),
     fuel: text('fuel').notNull(), // Petrol | Diesel | CNG | Electric | Hybrid
     transmission: text('transmission').notNull(), // Manual | Automatic
@@ -37,6 +39,7 @@ export const cars = sqliteTable(
     description: text('description').notNull().default(''),
     features: text('features', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
     inspection: text('inspection', { mode: 'json' }).$type<InspectionItem[]>().notNull().default(sql`'[]'`),
+    specs: text('specs', { mode: 'json' }).$type<CustomSpec[]>().notNull().default(sql`'[]'`), // admin-defined extra fields
     views: integer('views').notNull().default(0),
     soldAt: integer('sold_at', { mode: 'timestamp_ms' }),
     ...timestamps,

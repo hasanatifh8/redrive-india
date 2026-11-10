@@ -5,13 +5,14 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import type { CarView } from '@/lib/data';
 import { formatKm, formatPrice } from '@/lib/pricing';
+import { modelYearLabel } from '@/lib/constants';
 import { useShortlist } from './ShortlistProvider';
 import { CarImage } from './CarCard';
 
 const ROWS: [string, (c: CarView) => string | number][] = [
   ['Price', (c) => formatPrice(c.final)],
   ['Variant', (c) => c.variant],
-  ['Year', (c) => c.year],
+  ['Model year', (c) => modelYearLabel(c.year, c.month)],
   ['Kilometres', (c) => formatKm(c.km)],
   ['Fuel', (c) => c.fuel],
   ['Transmission', (c) => c.transmission],

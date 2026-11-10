@@ -11,7 +11,7 @@ import { SESSION_COOKIE, adminPassword, createSession, safeEqual, sessionMaxAge 
 import { deleteImages } from '@/lib/storage';
 import { slugify } from '@/lib/constants';
 import { SETTING_DEFAULTS, type SettingKey } from '@/lib/settings-defaults';
-import type { InspectionItem } from '@/db/schema';
+import type { CustomSpec, InspectionItem } from '@/db/schema';
 
 const { cars, carImages, leads, referralCodes, offers, settings } = schema;
 
@@ -54,6 +54,7 @@ const CarSchema = z.object({
   model: z.string().trim().min(1, 'Model is required'),
   variant: z.string().trim().default(''),
   year: z.coerce.number().int().min(1990, 'Year looks wrong').max(new Date().getFullYear() + 1, 'Year looks wrong'),
+  month: z.preprocess((v) => (v === '' || v == null ? null : Number(v)), z.number().int().min(1).max(12).nullable()),
   km: z.coerce.number().int().min(0),
   fuel: z.string().min(1),
   transmission: z.string().min(1),
@@ -113,8 +114,15 @@ export async function saveCar(_prev: ActionResult, form: FormData): Promise<Acti
     .filter((i) => i && i.area && i.score > 0)
     .map((i) => ({ area: String(i.area).slice(0, 60), score: Math.min(5, Math.max(1, Math.round(Number(i.score)))), note: i.note ? String(i.note).slice(0, 200) : undefined }));
 
+  // Admin-defined extra fields: drop empty rows and duplicate labels, keep order.
+  const seen = new Set<string>();
+  const specs = parseJson<CustomSpec[]>(form.get('specs'), [])
+    .map((x) => ({ label: String(x?.label ?? '').trim().slice(0, 60), value: String(x?.value ?? '').trim().slice(0, 200) }))
+    .filter((x) => x.label && x.value && !seen.has(x.label.toLowerCase()) && seen.add(x.label.toLowerCase()))
+    .slice(0, 40);
+
   const slug = await uniqueSlug(slugify(`${data.year} ${data.brand} ${data.model} ${data.variant}`), id);
-  const values = { ...data, slug, features, inspection, updatedAt: new Date() };
+  const values = { ...data, slug, features, inspection, specs, updatedAt: new Date() };
 
   let carId = id;
   if (id) {
