@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { Plus, Trash2, X } from 'lucide-react';
 import type { Car, CustomSpec, InspectionItem } from '@/db/schema';
-import { BODY_TYPES, BRANDS, CAR_STATUSES, COMMON_FEATURES, FUELS, INSPECTION_AREAS, MAX_CAR_IMAGES, MONTHS, OWNERS, SPEC_SUGGESTIONS, TRANSMISSIONS } from '@/lib/constants';
+import { BODY_TYPES, BRANDS, CAR_STATUSES, COMMON_FEATURES, DRIVETRAINS, ENGINE_TYPES, FUELS, INSPECTION_AREAS, MAX_CAR_IMAGES, MONTHS, OWNERS, SPEC_SUGGESTIONS, TRANSMISSIONS } from '@/lib/constants';
 import { finalPrice, formatPrice, formatRupees } from '@/lib/pricing';
 import { saveCar, type ActionResult } from '@/app/admin/actions';
 import ImageManager from './ImageManager';
@@ -129,6 +129,41 @@ export default function CarForm({ car, images = [] }: Props) {
               <Field label="Insurance" htmlFor="insuranceValidity" className="sm:col-span-2 lg:col-span-3">
                 <input id="insuranceValidity" name="insuranceValidity" defaultValue={car?.insuranceValidity} className="rd-input" placeholder="e.g. Comprehensive, valid till Mar 2026" />
               </Field>
+            </div>
+
+            <div className="mt-6 border-t border-dashed border-border pt-5">
+              <h3 className="text-[14px] font-semibold text-ink">Engine &amp; performance</h3>
+              <p className="mb-4 text-[12px] text-muted-foreground">All optional. Type just a number and the unit is added for you (e.g. 113 → 113 bhp).</p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Field label="Engine type" htmlFor="engineType">
+                  <input id="engineType" name="engineType" list="engine-type-list" defaultValue={car?.engineType} className="rd-input" placeholder="e.g. 1.5L Turbo Petrol" />
+                  <datalist id="engine-type-list">
+                    {ENGINE_TYPES.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                </Field>
+                <Field label="Engine capacity (cc)" htmlFor="engineCc">
+                  <input id="engineCc" name="engineCc" type="number" min={50} max={10000} step={1} defaultValue={car?.engineCc ?? ''} className="rd-input" placeholder="e.g. 1497" />
+                </Field>
+                <Field label="Max power (bhp)" htmlFor="power">
+                  <input id="power" name="power" defaultValue={car?.power} className="rd-input" placeholder="e.g. 113 or 113 bhp @ 6300 rpm" />
+                </Field>
+                <Field label="Max torque (Nm)" htmlFor="torque">
+                  <input id="torque" name="torque" defaultValue={car?.torque} className="rd-input" placeholder="e.g. 250 or 250 Nm @ 1500 rpm" />
+                </Field>
+                <Field label="Mileage (kmpl) / EV range" htmlFor="mileage">
+                  <input id="mileage" name="mileage" defaultValue={car?.mileage} className="rd-input" placeholder="e.g. 18.5 or 312 km range" />
+                </Field>
+                <Field label="Drivetrain" htmlFor="drivetrain">
+                  <select id="drivetrain" name="drivetrain" defaultValue={car?.drivetrain ?? ''} className="rd-select">
+                    <option value="">Not specified</option>
+                    {DRIVETRAINS.map((d) => (
+                      <option key={d}>{d}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
             </div>
           </Card>
 

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import type { CarView } from '@/lib/data';
 import { formatKm, formatPrice } from '@/lib/pricing';
-import { modelYearLabel } from '@/lib/constants';
+import { modelYearLabel, withUnit } from '@/lib/constants';
 import { useShortlist } from './ShortlistProvider';
 import { CarImage } from './CarCard';
 
@@ -17,6 +17,10 @@ const ROWS: [string, (c: CarView) => string | number][] = [
   ['Fuel', (c) => c.fuel],
   ['Transmission', (c) => c.transmission],
   ['Body type', (c) => c.bodyType],
+  ['Engine', (c) => [c.engineType, c.engineCc ? `${c.engineCc} cc` : ''].filter(Boolean).join(' · ') || '—'],
+  ['Max power', (c) => withUnit(c.power, 'bhp') || '—'],
+  ['Max torque', (c) => withUnit(c.torque, 'Nm') || '—'],
+  ['Mileage / range', (c) => withUnit(c.mileage, c.fuel === 'Electric' ? 'km' : 'kmpl') || '—'],
   ['Ownership', (c) => c.owner],
   ['Seats', (c) => c.seats ?? '—'],
   ['Colour', (c) => c.color || '—'],

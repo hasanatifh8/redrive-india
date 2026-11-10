@@ -51,13 +51,21 @@ export const BUDGET_OPTIONS = [
 
 export const MAX_CAR_IMAGES = 12;
 
+export const ENGINE_TYPES = [
+  'Petrol', 'Turbo Petrol', 'Diesel', 'Turbo Diesel', 'Petrol + CNG', 'Strong Hybrid', 'Mild Hybrid', 'Electric motor',
+];
+export const DRIVETRAINS = ['FWD (front-wheel drive)', 'RWD (rear-wheel drive)', 'AWD (all-wheel drive)', '4WD (four-wheel drive)'];
+
+/** Adds a unit when the admin typed just a number: "113" → "113 bhp"; "113 bhp @ 6300 rpm" is left alone. */
+export const withUnit = (value: string, unit: string) => (/^\d+(\.\d+)?$/.test(value.trim()) ? `${value.trim()} ${unit}` : value.trim());
+
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** "Mar 2021", or just "2021" when no month is set. */
 export const modelYearLabel = (year: number, month?: number | null) => (month ? `${MONTHS[month - 1]} ${year}` : String(year));
 
 // One-tap suggestions for the admin's "More details" fields — any label can be typed instead.
 export const SPEC_SUGGESTIONS = [
-  'Engine', 'Mileage', 'Power', 'Torque', 'Drivetrain', 'Boot space', 'Ground clearance',
+  'Top speed', 'Fuel tank', 'Battery capacity', 'Boot space', 'Ground clearance',
   'Service history', 'Accident history', 'Tyre condition', 'Spare keys', 'Warranty', 'Loan / hypothecation', 'RTO',
 ];
 

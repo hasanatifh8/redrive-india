@@ -18,9 +18,14 @@ import {
   Armchair,
   Eye,
   ListChecks,
+  Wrench,
+  Zap,
+  Activity,
+  Droplets,
+  Disc3,
 } from 'lucide-react';
 import { getCarBySlug, getPublicCars, getSettings } from '@/lib/data';
-import { modelYearLabel } from '@/lib/constants';
+import { modelYearLabel, withUnit } from '@/lib/constants';
 import { formatKm, formatPrice } from '@/lib/pricing';
 import { telHref, waHref } from '@/lib/settings-defaults';
 import CarCard from '@/components/CarCard';
@@ -64,6 +69,11 @@ export default async function CarPage({ params }: { params: { slug: string } }) 
     { label: 'Transmission', value: car.transmission, Icon: Cog },
     { label: 'Ownership', value: car.owner, Icon: Users },
     { label: 'Body type', value: car.bodyType, Icon: CarIcon },
+    { label: 'Engine', value: [car.engineType, car.engineCc ? `${car.engineCc.toLocaleString('en-IN')} cc` : ''].filter(Boolean).join(' · '), Icon: Wrench },
+    { label: 'Max power', value: withUnit(car.power, 'bhp'), Icon: Zap },
+    { label: 'Max torque', value: withUnit(car.torque, 'Nm'), Icon: Activity },
+    { label: car.fuel === 'Electric' ? 'Range' : 'Mileage', value: withUnit(car.mileage, car.fuel === 'Electric' ? 'km' : 'kmpl'), Icon: Droplets },
+    { label: 'Drivetrain', value: car.drivetrain.split(' ')[0], Icon: Disc3 },
     { label: 'Colour', value: car.color, Icon: Palette },
     { label: 'Seats', value: car.seats, Icon: Armchair },
     { label: 'Registration', value: car.registration, Icon: MapPin },

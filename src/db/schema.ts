@@ -24,6 +24,12 @@ export const cars = sqliteTable(
     fuel: text('fuel').notNull(), // Petrol | Diesel | CNG | Electric | Hybrid
     transmission: text('transmission').notNull(), // Manual | Automatic
     bodyType: text('body_type').notNull().default('SUV'),
+    engineType: text('engine_type').notNull().default(''), // e.g. "1.5L Turbo Petrol"
+    engineCc: integer('engine_cc'), // displacement in cc
+    power: text('power').notNull().default(''), // bhp, e.g. "113" or "113 bhp @ 6300 rpm"
+    torque: text('torque').notNull().default(''), // Nm
+    mileage: text('mileage').notNull().default(''), // kmpl (or km range for EVs)
+    drivetrain: text('drivetrain').notNull().default(''), // FWD | RWD | AWD | 4WD
     owner: text('owner').notNull().default('1st Owner'),
     color: text('color').notNull().default(''),
     seats: integer('seats'),
