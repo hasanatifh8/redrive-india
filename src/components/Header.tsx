@@ -1,24 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Heart, MapPin, Menu, Phone, Search, X } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
 import { DEFAULT_WA_TEXT, telHref, waHref } from '@/lib/settings-defaults';
 import { useSettings } from './SettingsProvider';
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './BrandIcons';
 import { useShortlist } from './ShortlistProvider';
+import SearchOverlay from './SearchOverlay';
 
 const iconBtn =
   'relative flex size-10 items-center justify-center rounded-full text-ink transition-[background-color,color] duration-150 hover:bg-muted hover:text-brand';
 
 export default function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const { wishlist } = useShortlist();
   const s = useSettings();
   const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const closeSearch = useCallback(() => setSearching(false), []);
+
+  // "/" or Ctrl/⌘+K opens search from anywhere (unless you're already typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      const typing = el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
+      if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) {
+        e.preventDefault();
+        setSearching(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => setOpen(false), [pathname]);
@@ -27,6 +43,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40" data-testid="site-header">
+      <SearchOverlay open={searching} onClose={closeSearch} />
       {/* Top bar */}
       <div className="hidden bg-ink text-[13px] text-white/75 md:block">
         <div className="rd-container flex h-9 items-center justify-between">
@@ -96,7 +113,7 @@ export default function Header() {
           </nav>
 
           <div className="ml-auto flex items-center gap-0.5">
-            <button type="button" className={iconBtn} aria-label="Search cars" onClick={() => router.push('/buy-cars')}>
+            <button type="button" className={iconBtn} aria-label="Search cars" onClick={() => setSearching(true)} title="Search (press /)">
               <Search className="size-[18px]" />
             </button>
             <Link href="/wishlist" className={iconBtn} aria-label="Wishlist">

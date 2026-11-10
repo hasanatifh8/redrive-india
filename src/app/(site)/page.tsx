@@ -18,6 +18,7 @@ import { formatPrice } from '@/lib/pricing';
 import { telHref } from '@/lib/settings-defaults';
 import CarCard from '@/components/CarCard';
 import VehicleSearch from '@/components/VehicleSearch';
+import { toSearchItem } from '@/lib/search';
 import Gallery from '@/components/Gallery';
 import Reveal from '@/components/Reveal';
 import LocationCard from '@/components/LocationCard';
@@ -127,7 +128,7 @@ export default async function Home() {
 
       {/* ---------- Vehicle search ---------- */}
       <div className="rd-container relative z-10 -mt-16">
-        <VehicleSearch brands={stockBrands.sort()} models={cars.map((c) => ({ brand: c.brand, model: c.model }))} />
+        <VehicleSearch cars={cars.map(toSearchItem)} />
       </div>
 
       {/* ---------- Featured ---------- */}

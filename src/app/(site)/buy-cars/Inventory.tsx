@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { RotateCcw, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import type { CarView } from '@/lib/data';
 import { BODY_TYPES, BUDGET_OPTIONS, FUELS, TRANSMISSIONS } from '@/lib/constants';
 import CarCard from '@/components/CarCard';
+import { searchCars } from '@/lib/search';
 import { EmptyState } from '@/components/ui';
 
 const SORTS = [
@@ -83,15 +84,29 @@ export default function Inventory({ cars }: { cars: CarView[] }) {
   };
   const reset = () => router.replace(pathname, { scroll: false });
 
+  // Search box: local state for instant typing, URL updated after a short pause,
+  // and kept in sync when the query changes from elsewhere (e.g. the header search).
+  const [qInput, setQInput] = useState(f.q);
+  const typing = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (f.q !== qInput.trim()) setQInput(f.q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.q]);
+  const onSearch = (v: string) => {
+    setQInput(v);
+    clearTimeout(typing.current);
+    typing.current = setTimeout(() => update('q', v.trim()), 250);
+  };
+
   const brands = Array.from(new Set(cars.map((c) => c.brand))).sort();
   const models = Array.from(new Set(cars.filter((c) => !f.brand || c.brand === f.brand).map((c) => c.model))).sort();
   const years = Array.from(new Set(cars.map((c) => c.year))).sort((a, b) => b - a);
 
   const results = useMemo(() => {
-    const q = f.q.trim().toLowerCase();
-    const list = cars.filter(
+    // Free-text search: every word must match; budget phrases like "under 10 lakh" are understood.
+    const matched = f.q.trim() ? searchCars(cars, f.q) : cars;
+    const list = matched.filter(
       (c) =>
-        (!q || `${c.brand} ${c.model} ${c.variant} ${c.color} ${c.bodyType}`.toLowerCase().includes(q)) &&
         (!f.brand || c.brand === f.brand) &&
         (!f.model || c.model === f.model) &&
         (!f.min || c.final >= Number(f.min)) &&
@@ -103,6 +118,8 @@ export default function Inventory({ cars }: { cars: CarView[] }) {
         (!f.maxKm || c.km <= Number(f.maxKm)) &&
         (!f.deals || c.saving > 0),
     );
+    // With a search and the default sort, keep best matches first.
+    if (f.q.trim() && sort === 'featured') return list;
     return [...list].sort(sorters[sort] ?? sorters.featured);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, cars]);
@@ -141,7 +158,7 @@ export default function Inventory({ cars }: { cars: CarView[] }) {
             <label htmlFor="f-q" className="text-[12px] font-medium text-muted-foreground">
               Search
             </label>
-            <input id="f-q" className="rd-input" placeholder="e.g. Creta, sunroof, white" defaultValue={f.q} onChange={(e) => update('q', e.target.value)} />
+            <input id="f-q" type="search" className="rd-input" placeholder="e.g. Creta diesel, SUV under 15 lakh" value={qInput} onChange={(e) => onSearch(e.target.value)} />
           </div>
           <Select id="brand" label="Brand" empty="All brands" value={f.brand} onChange={(v) => update('brand', v)} options={brands.map((b) => ({ value: b, label: b }))} />
           <Select id="model" label="Model" empty="All models" value={f.model} onChange={(v) => update('model', v)} options={models.map((m) => ({ value: m, label: m }))} />

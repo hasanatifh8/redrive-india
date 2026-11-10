@@ -7,6 +7,8 @@ import { db, schema } from '@/db';
 import { codeDiscount, finalPrice, formatPrice } from '@/lib/pricing';
 import { getCarsByIds } from '@/lib/data';
 import { saveImage } from '@/lib/storage';
+import { getPublicCars } from '@/lib/data';
+import { toSearchItem, type SearchItem } from '@/lib/search';
 
 const MAX_LEAD_PHOTOS = 8;
 const MAX_PHOTO_BYTES = 1.5 * 1024 * 1024; // browser compresses to ~300 KB first
@@ -146,4 +148,9 @@ export async function recordView(carId: number) {
 
 export async function fetchCarsByIds(ids: number[]) {
   return getCarsByIds(ids.filter((x) => Number.isInteger(x)).slice(0, 100));
+}
+
+/** Lightweight list of public cars for the header search window. */
+export async function getSearchIndex(): Promise<SearchItem[]> {
+  return (await getPublicCars()).map(toSearchItem);
 }
