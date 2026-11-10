@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { desc } from 'drizzle-orm';
 import { AlertTriangle, ArrowRight, CarFront, Eye, IndianRupee, Inbox, Plus, TrendingUp } from 'lucide-react';
-import { db, schema } from '@/db';
+import { databaseHost, db, schema } from '@/db';
 import { finalPrice, formatPrice } from '@/lib/pricing';
 import { LEAD_STATUSES, LEAD_TYPES } from '@/lib/constants';
 import { Badge, Card, PageHeader, btn } from '@/components/admin/ui';
@@ -59,7 +59,7 @@ export default async function Dashboard() {
     <>
       <PageHeader
         title="Dashboard"
-        description={new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        description={`${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Database: ${databaseHost}`}
         actions={
           <Link href="/admin/cars/new" className={btn.primary}>
             <Plus className="size-4" />

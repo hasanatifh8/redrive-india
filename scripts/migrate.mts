@@ -17,5 +17,7 @@ if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
 
 const client = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
 await migrate(drizzle(client), { migrationsFolder: './drizzle' });
-console.log(`✓ Database migrated (${url.startsWith('file:') ? url : 'remote Turso database'})`);
+// Log the host (never the token) so each deploy log shows exactly which database it touched.
+const host = url.startsWith('file:') ? url : new URL(url.replace(/^libsql:/, 'https:')).host;
+console.log(`✓ Database migrated: ${host}`);
 client.close();
