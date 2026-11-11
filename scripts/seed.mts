@@ -4,12 +4,15 @@ import { createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
 import { count } from 'drizzle-orm';
 import * as schema from '../src/db/schema.ts';
+import { resolveDatabase } from '../src/lib/db-config.ts';
 
 try {
   process.loadEnvFile('.env.local');
 } catch {}
 
-const client = createClient({ url: process.env.TURSO_DATABASE_URL || 'file:local.db', authToken: process.env.TURSO_AUTH_TOKEN });
+const { url, authToken, host } = resolveDatabase();
+console.log(`→ Seeding database: ${host}`);
+const client = createClient({ url, authToken });
 const db = drizzle(client, { schema });
 const { cars, carImages, offers, referralCodes } = schema;
 

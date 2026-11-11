@@ -7,6 +7,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { countRows, exportData, totalRows } from '../src/lib/backup.ts';
 import { backupStamp, pruneBackups, saveBackup } from '../src/lib/storage.ts';
+import { assertSafeDatabase, resolveDatabase } from '../src/lib/db-config.ts';
 
 try {
   process.loadEnvFile('.env.local');
@@ -14,16 +15,17 @@ try {
   /* no local env file — fine on Vercel */
 }
 
-const url = process.env.TURSO_DATABASE_URL || 'file:local.db';
-if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
-  console.error('✗ TURSO_DATABASE_URL is not set. Connect the Turso database to this Vercel project.');
+const { url, authToken, host } = resolveDatabase();
+// Log the host (never the token) so each deploy log shows exactly which database it touched.
+console.log(`→ Database: ${host}`);
+try {
+  assertSafeDatabase();
+} catch (e) {
+  console.error(`✗ ${e instanceof Error ? e.message : e}`);
   process.exit(1);
 }
-// Log the host (never the token) so each deploy log shows exactly which database it touched.
-const host = url.startsWith('file:') ? url : new URL(url.replace(/^libsql:/, 'https:')).host;
-console.log(`→ Database: ${host}`);
 
-const client = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
+const client = createClient({ url, authToken });
 
 const before = await countRows(client);
 console.log(`→ Rows before: ${JSON.stringify(before)}`);

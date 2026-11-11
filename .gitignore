@@ -8,3 +8,4 @@ local.db*
 next-env.d.ts
 *.tsbuildinfo
 .backups
+.env*

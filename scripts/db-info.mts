@@ -2,6 +2,7 @@
 // Usage:  npm run db:info                      → uses .env.local (or the local SQLite file)
 //         npm run db:info -- .env.vercel.local → uses credentials pulled from Vercel
 import { createClient } from '@libsql/client';
+import { resolveDatabase } from '../src/lib/db-config.ts';
 
 const envFile = process.argv[2] ?? '.env.local';
 try {
@@ -11,11 +12,10 @@ try {
   console.log(`(No ${envFile} found — checking the local database file)`);
 }
 
-const url = process.env.TURSO_DATABASE_URL || 'file:local.db';
-const host = url.startsWith('file:') ? url : new URL(url.replace(/^libsql:/, 'https:')).host;
-console.log(`\nDatabase: ${host}\n`);
+const { url, authToken, host, perDeployment } = resolveDatabase();
+console.log(`\nDatabase: ${host}${perDeployment ? '  ⚠ TEMPORARY per-deployment database!' : ''}\n`);
 
-const db = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
+const db = createClient({ url, authToken });
 const count = async (table: string) => {
   try {
     const r = await db.execute(`SELECT COUNT(*) AS n FROM ${table}`);
