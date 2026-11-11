@@ -38,19 +38,27 @@ After changing `src/db/schema.ts`, run `npm run db:generate` to create a migrati
 ## Deploy to Vercel
 
 1. **Push this folder to a GitHub repository**, then on vercel.com choose **Add New → Project** and import it.
-2. **Database:** in the project open **Storage → Create / Marketplace → Turso** and connect it. This adds `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
-3. **Photo storage:** **Storage → Create → Blob** and connect it. This adds `BLOB_READ_WRITE_TOKEN`.
+2. **Database:** **Storage → Marketplace → Turso**, create a database and connect it.
+   ⚠️ The integration injects a *new, empty per-deployment database* (`dpl-…`) into `TURSO_DATABASE_URL` on every deploy.
+   So also point the site at the **main database** (Type “Database”, not “Branch”, in Turso):
+   - `DATABASE_URL` = its `libsql://…` address (Turso → database → ⋮ → Create Token shows it)
+   - `DATABASE_AUTH_TOKEN` = a token with **Full access** and **no expiry** (mark Sensitive)
+   Production builds refuse to deploy on a `dpl-…` database, so you can't lose data this way.
+3. **Photo storage:** **Storage → Create → Blob** and connect it (adds `BLOB_STORE_ID`, or `BLOB_READ_WRITE_TOKEN` on older stores).
 4. **Settings → Environment Variables**, add:
    - `ADMIN_PASSWORD`: a strong password for `/admin`
-   - `AUTH_SECRET`: a random string of 32+ characters (generate one with `openssl rand -base64 32`)
+   - `AUTH_SECRET`: a random string of 32+ characters (`openssl rand -base64 32`)
+   - `CRON_SECRET`: any long random text — turns on nightly backups
    - `NEXT_PUBLIC_SITE_URL`: your domain, e.g. `https://redriveindia.in`
-5. **Deploy.** The build runs database migrations automatically.
-6. **Optional:** load the demo cars into the live database once, from your computer:
-   ```bash
-   TURSO_DATABASE_URL=… TURSO_AUTH_TOKEN=… npm run db:seed
-   ```
-   Or skip this and add your real cars from `/admin`.
+5. **Deploy.** Each build logs `→ Database: <host>`, saves a pre-deploy backup, runs migrations, and cancels itself if any table lost rows.
+6. Add cars from `/admin` — one by one, or many at once with **Cars → Bulk import**.
 7. In `/admin/settings`, fill in the opening hours and turn off **“Show demo data notices”** once real stock is listed.
+
+### Backups & recovery
+- **Admin → Backups:** back up now, download, one-click restore (a copy of current data is saved first), restore from a file.
+- Automatic backups before every deploy (last 20) and nightly (last 30 days, needs `CRON_SECRET`).
+- **Admin → Recover photos:** photos not attached to any car, grouped by upload time — turn them back into cars.
+- `npm run db:info` prints which database a set of credentials points at and its row counts (read-only).
 
 ## Project layout
 
