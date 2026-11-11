@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CarFront, ExternalLink, Inbox, LayoutDashboard, LogOut, Menu, Settings, Tag, TicketPercent, X } from 'lucide-react';
+import { CarFront, DatabaseBackup, ImageUp, ExternalLink, Inbox, LayoutDashboard, LogOut, Menu, Settings, Tag, TicketPercent, X } from 'lucide-react';
 import { logout } from '@/app/admin/actions';
 
 const LINKS = [
@@ -13,6 +13,8 @@ const LINKS = [
   { href: '/admin/referrals', label: 'Referral codes', Icon: TicketPercent },
   { href: '/admin/offers', label: 'Offers', Icon: Tag },
   { href: '/admin/settings', label: 'Settings', Icon: Settings },
+  { href: '/admin/backups', label: 'Backups', Icon: DatabaseBackup },
+  { href: '/admin/recover', label: 'Recover photos', Icon: ImageUp },
 ];
 
 export default function AdminNav({ newLeads }: { newLeads: number }) {

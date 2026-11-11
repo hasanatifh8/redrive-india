@@ -1,5 +1,5 @@
-import { put, del } from '@vercel/blob';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { put, del, list, get } from '@vercel/blob';
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export const LOCAL_UPLOAD_DIR = path.join(process.cwd(), '.uploads');
@@ -69,3 +69,103 @@ export async function deleteImages(urls: string[]) {
     }),
   );
 }
+
+/** Every stored image in a folder, with the URL format the site uses for it. */
+export async function listStoredImages(folder: string): Promise<{ url: string; uploadedAt: Date; size: number }[]> {
+  if (useBlob()) {
+    const out: { url: string; uploadedAt: Date; size: number }[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix: `${folder}/`, cursor, limit: 1000 });
+      for (const b of page.blobs) {
+        // Public stores serve the blob URL directly; private stores go through our /media route.
+        const url = b.url.includes('.public.blob.vercel-storage.com') ? b.url : PRIVATE_MEDIA_PREFIX + b.pathname;
+        out.push({ url, uploadedAt: new Date(b.uploadedAt), size: b.size });
+      }
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+    return out;
+  }
+  try {
+    const dir = path.join(LOCAL_UPLOAD_DIR, folder);
+    const files = await readdir(dir);
+    return Promise.all(
+      files.map(async (f) => {
+        const st = await stat(path.join(dir, f));
+        return { url: `/uploads/${folder}/${f}`, uploadedAt: st.mtime, size: st.size };
+      }),
+    );
+  } catch {
+    return [];
+  }
+}
+
+/* ------------------------------------------------------------------ backups */
+// Backups contain customer phone numbers, so in Blob they are always stored privately.
+
+export const LOCAL_BACKUP_DIR = path.join(process.cwd(), '.backups');
+export type BackupEntry = { name: string; size: number; createdAt: Date };
+const safeName = (name: string) => {
+  if (!/^[a-z0-9-]+\.json$/i.test(name)) throw new Error('Invalid backup name');
+  return name;
+};
+
+export async function saveBackup(name: string, json: string) {
+  safeName(name);
+  if (useBlob()) {
+    await put(`backups/${name}`, json, { access: 'private', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
+    return;
+  }
+  if (process.env.VERCEL) throw new Error('Blob storage is not connected — cannot save backups.');
+  await mkdir(LOCAL_BACKUP_DIR, { recursive: true });
+  await writeFile(path.join(LOCAL_BACKUP_DIR, name), json);
+}
+
+export async function listBackups(): Promise<BackupEntry[]> {
+  if (useBlob()) {
+    const out: BackupEntry[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix: 'backups/', cursor, limit: 1000 });
+      for (const b of page.blobs) out.push({ name: b.pathname.slice('backups/'.length), size: b.size, createdAt: new Date(b.uploadedAt) });
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+    return out.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  try {
+    const files = (await readdir(LOCAL_BACKUP_DIR)).filter((f) => f.endsWith('.json'));
+    const out = await Promise.all(
+      files.map(async (f) => {
+        const st = await stat(path.join(LOCAL_BACKUP_DIR, f));
+        return { name: f, size: st.size, createdAt: st.mtime };
+      }),
+    );
+    return out.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch {
+    return [];
+  }
+}
+
+export async function readBackup(name: string) {
+  safeName(name);
+  if (useBlob()) {
+    const res = await get(`backups/${name}`, { access: 'private' });
+    if (!res || res.statusCode !== 200) throw new Error('Backup not found');
+    return new Response(res.stream).text();
+  }
+  return readFile(path.join(LOCAL_BACKUP_DIR, name), 'utf8');
+}
+
+export async function deleteBackup(name: string) {
+  safeName(name);
+  if (useBlob()) return del(`backups/${name}`);
+  await unlink(path.join(LOCAL_BACKUP_DIR, name)).catch(() => {});
+}
+
+/** Keeps the newest `keep` backups whose names start with `prefix`. */
+export async function pruneBackups(prefix: string, keep: number) {
+  const old = (await listBackups()).filter((b) => b.name.startsWith(prefix)).slice(keep);
+  await Promise.all(old.map((b) => deleteBackup(b.name)));
+}
+
+export const backupStamp = (d = new Date()) => d.toISOString().replace(/[:.]/g, '-').replace('T', '-').slice(0, 19);

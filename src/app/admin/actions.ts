@@ -5,10 +5,11 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, schema } from '@/db';
+import { db, libsql, schema } from '@/db';
 import { requireAdmin } from '@/lib/admin-guard';
 import { SESSION_COOKIE, adminPassword, createSession, safeEqual, sessionMaxAge } from '@/lib/auth';
-import { deleteImages } from '@/lib/storage';
+import { backupStamp, deleteBackup as removeBackupFile, deleteImages, listStoredImages, readBackup, saveBackup } from '@/lib/storage';
+import { exportData, parseBackup, restoreData } from '@/lib/backup';
 import { slugify } from '@/lib/constants';
 import { SETTING_DEFAULTS, type SettingKey } from '@/lib/settings-defaults';
 import type { CustomSpec, InspectionItem } from '@/db/schema';
@@ -138,8 +139,8 @@ export async function saveCar(_prev: ActionResult, form: FormData): Promise<Acti
       .update(cars)
       .set({ ...values, soldAt: data.status === 'sold' ? (existing.soldAt ?? new Date()) : null })
       .where(eq(cars.id, id));
-    const old = await db.select().from(carImages).where(eq(carImages.carId, id));
-    await deleteImages(old.map((o) => o.url).filter((u) => !images.includes(u)));
+    // Photos removed here are NOT deleted from storage — they stay in Admin → Recover photos,
+    // so a backup restore (or a change of mind) can always bring them back.
     await db.delete(carImages).where(eq(carImages.carId, id));
   } else {
     const [row] = await db
@@ -156,12 +157,11 @@ export async function saveCar(_prev: ActionResult, form: FormData): Promise<Acti
 
 export async function deleteCar(id: number) {
   await requireAdmin();
-  const imgs = await db.select().from(carImages).where(eq(carImages.carId, id));
   await db.delete(carImages).where(eq(carImages.carId, id));
   await db.update(offers).set({ carId: null }).where(eq(offers.carId, id));
   await db.update(leads).set({ carId: null }).where(eq(leads.carId, id));
   await db.delete(cars).where(eq(cars.id, id));
-  await deleteImages(imgs.map((i) => i.url));
+  // Photos are kept in storage on purpose (see Admin → Recover photos) so a restore can bring them back.
   refreshSite();
 }
 
@@ -359,4 +359,98 @@ export async function saveSettings(_prev: ActionResult, form: FormData): Promise
   }
   refreshSite();
   return { ok: true, message: 'Settings saved' };
+}
+
+/* ------------------------------------------------------------------ backups */
+
+export async function backupNow(): Promise<ActionResult> {
+  await requireAdmin();
+  const data = await exportData(libsql);
+  await saveBackup(`manual-${backupStamp()}.json`, JSON.stringify(data));
+  revalidatePath('/admin/backups');
+  return { ok: true, message: `Backup saved (${data.counts.cars ?? 0} cars, ${data.counts.leads ?? 0} leads)` };
+}
+
+async function restoreFromText(text: string): Promise<ActionResult> {
+  const data = parseBackup(text);
+  // Always keep a copy of what's there right now, so a restore can itself be undone.
+  await saveBackup(`before-restore-${backupStamp()}.json`, JSON.stringify(await exportData(libsql)));
+  const counts = await restoreData(libsql, data);
+  refreshSite();
+  return { ok: true, message: `Restored: ${counts.cars ?? 0} cars, ${counts.leads ?? 0} leads, ${counts.offers ?? 0} offers` };
+}
+
+export async function restoreBackup(name: string): Promise<ActionResult> {
+  await requireAdmin();
+  try {
+    return await restoreFromText(await readBackup(name));
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : 'Restore failed' };
+  }
+}
+
+export async function restoreUploadedBackup(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const file = form.get('file');
+  if (!(file instanceof File) || !file.size) return { ok: false, message: 'Choose a backup file first' };
+  try {
+    return await restoreFromText(await file.text());
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : 'Restore failed' };
+  }
+}
+
+export async function deleteBackup(name: string) {
+  await requireAdmin();
+  await removeBackupFile(name);
+  revalidatePath('/admin/backups');
+}
+
+/* ------------------------------------------------------------------ recover from photos */
+
+/** Car photos in storage that no car uses any more, oldest first. */
+export async function getOrphanPhotos() {
+  await requireAdmin();
+  const [stored, used] = await Promise.all([listStoredImages('cars'), db.select({ url: carImages.url }).from(carImages)]);
+  const usedSet = new Set(used.map((u) => u.url));
+  return stored.filter((p) => !usedSet.has(p.url)).sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime());
+}
+
+export async function recoverCar(urls: string[]): Promise<ActionResult> {
+  await requireAdmin();
+  // Only accept photos that really exist in storage and are unused.
+  const orphans = await getOrphanPhotos();
+  const valid = orphans.map((o) => o.url).filter((u) => urls.includes(u));
+  if (!valid.length) return { ok: false, message: 'Select at least one photo' };
+  const when = orphans.find((o) => o.url === valid[0])!.uploadedAt;
+  const label = when.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+  const [row] = await db
+    .insert(cars)
+    .values({
+      slug: await uniqueSlug(slugify(`recovered ${backupStamp(when)}`)),
+      brand: 'Recovered',
+      model: `Car (photos from ${label})`,
+      year: new Date().getFullYear(),
+      km: 0,
+      fuel: 'Petrol',
+      transmission: 'Manual',
+      bodyType: 'SUV',
+      owner: '1st Owner',
+      price: 1,
+      status: 'draft',
+      description: '',
+    })
+    .returning({ id: cars.id });
+  await db.insert(carImages).values(valid.map((url, i) => ({ carId: row.id, url, sortOrder: i })));
+  revalidatePath('/admin', 'layout');
+  redirect(`/admin/cars/${row.id}?recovered=1`);
+}
+
+export async function deleteOrphanPhotos(urls: string[]): Promise<ActionResult> {
+  await requireAdmin();
+  const orphans = new Set((await getOrphanPhotos()).map((o) => o.url));
+  const valid = urls.filter((u) => orphans.has(u));
+  await deleteImages(valid);
+  revalidatePath('/admin/recover');
+  return { ok: true, message: `Deleted ${valid.length} photo${valid.length === 1 ? '' : 's'}` };
 }

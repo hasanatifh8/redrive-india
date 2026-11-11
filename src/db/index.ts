@@ -17,4 +17,6 @@ const client = globalForDb.libsql ?? createClient({ url, authToken: process.env.
 if (process.env.NODE_ENV !== 'production') globalForDb.libsql = client;
 
 export const db = drizzle(client, { schema });
+/** Raw client, used for backups. */
+export const libsql = client;
 export { schema };

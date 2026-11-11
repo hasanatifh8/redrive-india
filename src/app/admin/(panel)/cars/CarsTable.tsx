@@ -73,7 +73,7 @@ export default function CarsTable({ rows, initialStatus, initialQuery }: { rows:
       if (!input) return;
       value = Number(input.replace(/[^\d.]/g, ''));
     }
-    if (bulk === 'delete' && !window.confirm(`Delete ${selected.length} car(s) and their photos permanently?`)) return;
+    if (bulk === 'delete' && !window.confirm(`Delete ${selected.length} car(s)?\n\nTheir photos are kept in Admin → Recover photos, and a backup is available in Admin → Backups.`)) return;
     start(async () => {
       const res = await bulkCarAction(selected, bulk, value);
       setToast({ message: res?.message ?? 'Done', ok: !!res?.ok });
@@ -197,7 +197,7 @@ export default function CarsTable({ rows, initialStatus, initialQuery }: { rows:
                       <ActionButton action={() => duplicateCar(r.id)} title="Duplicate as draft">
                         <Copy className="size-3.5" />
                       </ActionButton>
-                      <ActionButton action={() => deleteCar(r.id)} confirm={`Delete ${r.year} ${r.title} and all its photos?`} className={btn.danger} title="Delete">
+                      <ActionButton action={() => deleteCar(r.id)} confirm={`Delete ${r.year} ${r.title}?\n\nIts photos are kept — you can re-attach them from Admin → Recover photos, or restore from Admin → Backups.`} className={btn.danger} title="Delete">
                         <Trash2 className="size-3.5" />
                       </ActionButton>
                     </div>
