@@ -10,6 +10,7 @@ import { requireAdmin } from '@/lib/admin-guard';
 import { SESSION_COOKIE, adminPassword, createSession, safeEqual, sessionMaxAge } from '@/lib/auth';
 import { backupStamp, deleteBackup as removeBackupFile, deleteImages, listStoredImages, readBackup, saveBackup } from '@/lib/storage';
 import { exportData, parseBackup, restoreData } from '@/lib/backup';
+import { normalizeRecord, type ImportKey } from '@/lib/car-import';
 import { slugify } from '@/lib/constants';
 import { SETTING_DEFAULTS, type SettingKey } from '@/lib/settings-defaults';
 import type { CustomSpec, InspectionItem } from '@/db/schema';
@@ -453,4 +454,46 @@ export async function deleteOrphanPhotos(urls: string[]): Promise<ActionResult> 
   await deleteImages(valid);
   revalidatePath('/admin/recover');
   return { ok: true, message: `Deleted ${valid.length} photo${valid.length === 1 ? '' : 's'}` };
+}
+
+/* ------------------------------------------------------------------ bulk import */
+
+export type ImportResult = { ok: boolean; message: string; id?: number; slug?: string; action?: 'created' | 'updated' };
+
+const OUR_IMAGE = /^(\/uploads\/|\/media\/|https:\/\/[a-z0-9.-]+\.blob\.vercel-storage\.com\/)/i;
+
+/** Creates (or, when the row has an id, updates) one car from a spreadsheet row. Re-validated here. */
+export async function importCarRow(record: Partial<Record<ImportKey, string>>, images: string[], asDraft: boolean): Promise<ImportResult> {
+  await requireAdmin();
+  const { car, errors } = normalizeRecord(record ?? {});
+  if (!car) return { ok: false, message: errors.join(' · ') };
+  const photos = (images ?? []).filter((u) => typeof u === 'string' && OUR_IMAGE.test(u)).slice(0, 20);
+
+  const { id, photoCode: _code, ...fields } = car;
+  const values = { ...fields, status: asDraft ? ('draft' as const) : car.status, specs: [], inspection: [], updatedAt: new Date() };
+  const slug = await uniqueSlug(slugify(`${car.year} ${car.brand} ${car.model} ${car.variant}`), id);
+
+  if (id) {
+    const [existing] = await db.select({ id: cars.id, soldAt: cars.soldAt, specs: cars.specs, inspection: cars.inspection }).from(cars).where(eq(cars.id, id));
+    if (!existing) return { ok: false, message: `No car with id ${id} — clear the id column to add it as a new car` };
+    // Keep things the spreadsheet doesn't hold (inspection, custom fields, photos unless new ones were given).
+    await db
+      .update(cars)
+      .set({ ...values, specs: existing.specs, inspection: existing.inspection, slug, soldAt: values.status === 'sold' ? (existing.soldAt ?? new Date()) : null })
+      .where(eq(cars.id, id));
+    if (photos.length) {
+      await db.delete(carImages).where(eq(carImages.carId, id));
+      await db.insert(carImages).values(photos.map((url, i) => ({ carId: id, url, sortOrder: i })));
+    }
+    refreshSite();
+    return { ok: true, message: 'Updated', id, slug, action: 'updated' };
+  }
+
+  const [row] = await db
+    .insert(cars)
+    .values({ ...values, slug, soldAt: values.status === 'sold' ? new Date() : null })
+    .returning({ id: cars.id });
+  if (photos.length) await db.insert(carImages).values(photos.map((url, i) => ({ carId: row.id, url, sortOrder: i })));
+  refreshSite();
+  return { ok: true, message: 'Created', id: row.id, slug, action: 'created' };
 }

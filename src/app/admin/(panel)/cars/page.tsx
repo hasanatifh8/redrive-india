@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { asc, desc } from 'drizzle-orm';
-import { Plus } from 'lucide-react';
+import { FileSpreadsheet, Plus } from 'lucide-react';
 import { db, schema } from '@/db';
 import { finalPrice } from '@/lib/pricing';
 import { PageHeader, btn } from '@/components/admin/ui';
@@ -47,10 +47,16 @@ export default async function AdminCarsPage({ searchParams }: { searchParams: { 
         title="Cars"
         description="Add, edit, price and publish your stock. Changes go live on the website instantly."
         actions={
+          <>
+          <Link href="/admin/cars/import" className={btn.outline}>
+            <FileSpreadsheet className="size-4" />
+            Bulk import
+          </Link>
           <Link href="/admin/cars/new" className={btn.primary}>
             <Plus className="size-4" />
             Add car
           </Link>
+          </>
         }
       />
       <CarsTable rows={rows} initialStatus={searchParams.status ?? 'all'} initialQuery={searchParams.q ?? ''} />

@@ -2,17 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ImagePlus, Loader2, Star, Trash2, UploadCloud } from 'lucide-react';
-import { compressImage } from '@/lib/compress-image';
+import { uploadPhoto } from '@/lib/upload-client';
 
-async function upload(file: File, folder: string): Promise<string> {
-  const body = new FormData();
-  body.append('file', await compressImage(file));
-  body.append('folder', folder);
-  const res = await fetch('/api/admin/upload', { method: 'POST', body });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
-  return data.url as string;
-}
+const upload = (file: File, folder: string) => uploadPhoto(file, folder);
 
 // Each slot is either an uploaded image (url) or one still uploading (preview).
 type Slot = { key: string; url?: string; preview?: string };
